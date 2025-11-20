@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Fetch dependencies
+        run: flutter pub get
+
+      - name: Ensure generated shortcuts are up to date
+        run: |
+          dart run tool/generate_shortcuts.dart
+          git diff --exit-code
+
+      - name: Format check
+        run: dart format --output=none --set-exit-if-changed lib tool
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test

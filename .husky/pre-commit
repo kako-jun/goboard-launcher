@@ -1,0 +1,9 @@
+#!/bin/sh
+
+npm run codegen --if-present
+if [ -f lib/generated/shortcuts.g.dart ]; then
+  git add lib/generated/shortcuts.g.dart
+fi
+
+dart format --output=none --set-exit-if-changed lib tool
+flutter analyze
