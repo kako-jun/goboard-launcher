@@ -1,0 +1,14 @@
+{
+  "name": "goboard-launcher",
+  "private": true,
+  "scripts": {
+    "prepare": "husky install",
+    "format:check": "dart format --output=none --set-exit-if-changed lib tool",
+    "lint": "flutter analyze",
+    "codegen": "dart run tool/generate_shortcuts.dart",
+    "verify": "npm run codegen --if-present && npm run format:check && npm run lint"
+  },
+  "devDependencies": {
+    "husky": "^9.0.10"
+  }
+}
