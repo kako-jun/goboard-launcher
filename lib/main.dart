@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'generated/shortcuts.g.dart';
 
@@ -182,7 +183,7 @@ class GoBoardCell extends StatelessWidget {
     final borderColor = isHighlighted
         ? Colors.green
         : (isTengen ? Colors.deepOrange : Colors.brown.shade200);
-    final elevation = isHighlighted ? 6 : (isTengen ? 4 : 1);
+    final elevation = isHighlighted ? 6.0 : (isTengen ? 4.0 : 1.0);
 
     return AnimatedScale(
       duration: const Duration(milliseconds: 200),
