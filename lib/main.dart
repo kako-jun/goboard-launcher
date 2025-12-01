@@ -18,7 +18,6 @@ class GoBoardLauncherApp extends StatefulWidget {
 
 class _GoBoardLauncherAppState extends State<GoBoardLauncherApp> {
   final ShortcutController _shortcutController = ShortcutController();
-  String? _statusMessage;
   String? _highlightedCoordinate;
 
   Timer? _highlightResetTimer;
@@ -50,11 +49,6 @@ class _GoBoardLauncherAppState extends State<GoBoardLauncherApp> {
       return;
     }
     final shortcut = _shortcutsByCoordinate[command];
-    setState(() {
-      _statusMessage = shortcut != null
-          ? '座標 $command → ${shortcut.label} を起動'
-          : '座標 $command に割り当てられたアプリがありません';
-    });
     if (shortcut != null) {
       _highlightCoordinate(shortcut.coordinate);
     }
@@ -87,43 +81,27 @@ class _GoBoardLauncherAppState extends State<GoBoardLauncherApp> {
           useMaterial3: true,
         ),
         home: Scaffold(
-          appBar: AppBar(
-            title: const Text('GoBoard Launcher'),
-            actions: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Center(
-                  child: Text(
-                    'ショートカット: ggg11〜ggg99',
-                    style: Theme.of(context).textTheme.bodyMedium,
+          body: Column(
+            children: [
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(4),
+                  child: GoBoardGrid(
+                    shortcuts: _shortcuts,
+                    highlightedCoordinate: _highlightedCoordinate,
                   ),
                 ),
               ),
-            ],
-          ),
-          body: Column(
-            children: [
-              ValueListenableBuilder<ShortcutInputStatus>(
-                valueListenable: _shortcutController.statusNotifier,
-                builder: (context, status, _) {
-                  return ShortcutCommandPanel(
-                    status: status,
-                    statusMessage: _statusMessage,
-                  );
-                },
-              ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Center(
-                    child: AspectRatio(
-                      aspectRatio: 1,
-                      child: GoBoardGrid(
-                        shortcuts: _shortcuts,
-                        highlightedCoordinate: _highlightedCoordinate,
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                color: Colors.brown.shade50,
+                child: Text(
+                  'ショートカット: ggg11〜ggg99',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Colors.brown.shade600,
                       ),
-                    ),
-                  ),
                 ),
               ),
             ],
@@ -146,23 +124,78 @@ class GoBoardGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GridView.builder(
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 9,
-        mainAxisSpacing: 2,
-        crossAxisSpacing: 2,
+    return CustomPaint(
+      painter: GoBoardPainter(),
+      child: GridView.builder(
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 9,
+          mainAxisSpacing: 0,
+          crossAxisSpacing: 0,
+        ),
+        itemCount: shortcuts.length,
+        itemBuilder: (context, index) {
+          final shortcut = shortcuts[index];
+          return GoBoardCell(
+            shortcut: shortcut,
+            isHighlighted: shortcut.coordinate == highlightedCoordinate,
+          );
+        },
       ),
-      itemCount: shortcuts.length,
-      itemBuilder: (context, index) {
-        final shortcut = shortcuts[index];
-        return GoBoardCell(
-          shortcut: shortcut,
-          isHighlighted: shortcut.coordinate == highlightedCoordinate,
-        );
-      },
     );
   }
+}
+
+class GoBoardPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.brown.shade800
+      ..strokeWidth = 1
+      ..style = PaintingStyle.stroke;
+
+    final cellWidth = size.width / 9;
+    final cellHeight = size.height / 9;
+
+    // 縦線を描画
+    for (int i = 0; i < 9; i++) {
+      final x = cellWidth * i + cellWidth / 2;
+      canvas.drawLine(
+        Offset(x, cellHeight / 2),
+        Offset(x, size.height - cellHeight / 2),
+        paint,
+      );
+    }
+
+    // 横線を描画
+    for (int i = 0; i < 9; i++) {
+      final y = cellHeight * i + cellHeight / 2;
+      canvas.drawLine(
+        Offset(cellWidth / 2, y),
+        Offset(size.width - cellWidth / 2, y),
+        paint,
+      );
+    }
+
+    // 星（天元と4つの星）を描画
+    final starPaint = Paint()
+      ..color = Colors.brown.shade900
+      ..style = PaintingStyle.fill;
+
+    final stars = [
+      [4, 4], // 天元
+      [2, 2], [2, 6], [6, 2], [6, 6], // 4つの星
+    ];
+
+    for (final star in stars) {
+      final x = cellWidth * star[0] + cellWidth / 2;
+      final y = cellHeight * star[1] + cellHeight / 2;
+      canvas.drawCircle(Offset(x, y), 3, starPaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 class GoBoardCell extends StatelessWidget {
@@ -178,75 +211,40 @@ class GoBoardCell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isTengen = shortcut.coordinate == '55';
-    final baseColor = isTengen ? Colors.amber.shade200 : Colors.white;
-    final highlightColor = isHighlighted ? Colors.greenAccent.shade100 : baseColor;
-    final borderColor = isHighlighted
-        ? Colors.green
-        : (isTengen ? Colors.deepOrange : Colors.brown.shade200);
-    final elevation = isHighlighted ? 6.0 : (isTengen ? 4.0 : 1.0);
+    final baseColor = isHighlighted ? Colors.green.shade400 : Colors.white;
+    final shadowColor = isHighlighted ? Colors.green.shade700 : Colors.grey.shade600;
 
-    return AnimatedScale(
-      duration: const Duration(milliseconds: 200),
-      scale: isHighlighted ? 1.03 : 1.0,
-      child: Card(
-        color: highlightColor,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(isTengen ? 12 : 6),
-          side: BorderSide(
-            color: borderColor,
-            width: isHighlighted ? 2.5 : (isTengen ? 2 : 1),
-          ),
+    return Center(
+      child: Container(
+        margin: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: baseColor,
+          boxShadow: [
+            BoxShadow(
+              color: shadowColor.withOpacity(0.5),
+              spreadRadius: 1,
+              blurRadius: 4,
+              offset: const Offset(2, 2),
+            ),
+          ],
+          border: isTengen
+              ? Border.all(color: Colors.amber.shade700, width: 2)
+              : null,
         ),
-        elevation: elevation,
         child: InkWell(
+          customBorder: const CircleBorder(),
           onTap: () {
             final messenger = ScaffoldMessenger.of(context);
             messenger.showSnackBar(
               SnackBar(content: Text('${shortcut.label} (${shortcut.coordinate})')),
             );
           },
-          child: Padding(
-            padding: const EdgeInsets.all(6),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  shortcut.icon,
-                  size: isTengen ? 32 : 26,
-                  color: isHighlighted ? Colors.green.shade900 : null,
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  shortcut.label,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodySmall,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                if (shortcut.category != null) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    shortcut.category!,
-                    style: Theme.of(context)
-                        .textTheme
-                        .labelSmall
-                        ?.copyWith(
-                          color: Colors.brown.shade400,
-                          fontWeight: FontWeight.w600,
-                        ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-                const SizedBox(height: 6),
-                Text(
-                  shortcut.coordinate,
-                  style: Theme.of(context)
-                      .textTheme
-                      .labelSmall
-                      ?.copyWith(color: Colors.grey.shade700),
-                ),
-              ],
+          child: Center(
+            child: Icon(
+              shortcut.icon,
+              size: isTengen ? 28 : 24,
+              color: isHighlighted ? Colors.green.shade900 : Colors.brown.shade700,
             ),
           ),
         ),
