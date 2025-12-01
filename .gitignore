@@ -18,3 +18,4 @@ flutter_*.png
 
 # Node
 node_modules/
+.claude/settings.local.json
