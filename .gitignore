@@ -27,3 +27,4 @@ flutter_*.png
 node_modules/
 .claude/settings.local.json
 .serena/
+.mcp.json
