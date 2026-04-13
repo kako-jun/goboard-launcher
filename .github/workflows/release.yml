@@ -41,7 +41,7 @@ jobs:
           path: build/goboard-launcher-web.tar.gz
 
       - name: Attach to GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: build/goboard-launcher-web.tar.gz
           generate_release_notes: true
